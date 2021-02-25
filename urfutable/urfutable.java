@@ -1,5 +1,5 @@
 /*
-получение расписания URFU (текст возвращается в UTF-8 кодировке)
+парсим расписание URFU (текст возвращается в UTF-8 кодировке)
 */
 import java.io.BufferedReader;
 import java.io.IOException;
