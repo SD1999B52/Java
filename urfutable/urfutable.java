@@ -76,7 +76,7 @@ class urfutable {
 		return table;
 	}
 	
-	//получаем количества столбцов массива
+	//получаем количество столбцов для массива
 	public static int getColNum( ArrayList<String> list ) {
 		int max = 0;
 		for ( int i = 0; i < list.size(); i++ ) {
@@ -153,7 +153,7 @@ class urfutable {
 		return newtable;
 	}
 	
-	//убираем номер перед предметом
+	//удаляем номер перед предметом
 	public static String delNumSubject( String line ) {
 		String newline = "";
 		int space = 2;
@@ -182,7 +182,7 @@ class urfutable {
 		return false;
 	}
 	
-	//убираем пробелы
+	//удаляем пробелы
 	public static String delSpace( String line ) {
 		String text = "";
 		for ( int i = 0; i < line.length(); i++ ) {
@@ -268,7 +268,7 @@ class urfutable {
 		return sheet;
 	}
 	
-	//получение текущей даты
+	//получаем текущую дату
 	public static String getDate() {
 		Calendar calendar = Calendar.getInstance();
 		
