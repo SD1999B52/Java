@@ -63,13 +63,12 @@ class urfutable {
 			String text = "";
 			int col = 0;
 			for ( int i2 = 0; i2 < line.length(); i2++ ) {
-				if (( line.charAt( i2 ) != '|' ) & ( i2 != line.length() - 1 )) {
+				if ( line.charAt( i2 ) != '|' ) {
 					text += line.charAt( i2 );
 				} else {
 					table[i][col] = text;
 					col += 1;
 					text = "";
-					continue;
 				}
 			}
 		}
@@ -147,7 +146,7 @@ class urfutable {
 					}
 				}
 				
-				newtable.add( line );
+				newtable.add( line + "|" );
 			}
 		}
 		return newtable;
