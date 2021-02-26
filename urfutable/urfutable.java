@@ -1,5 +1,5 @@
 /*
-парсим расписание URFU (текст возвращается в UTF-8 кодировке)
+получаем расписание URFU (текст возвращается в UTF-8 кодировке)
 */
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,56 +30,29 @@ class urfutable {
 	
 	//вывод массива String[][]
 	public static void outTable( String[][] array ) {
-		int[] colsize = new int[array[0].length];
 		for ( int i = 0; i < array.length; i++ ) {
-			for ( int i2 = 0; i2 < array[0].length; i2++ ) {
-				if ( array[i][i2] != null ) {
-					if ( colsize[i2] < array[i][i2].length()) {
-						colsize[i2] = array[i][i2].length();
-					}
-				}
-			}
-		}
-		
-		for ( int i = 0; i < array.length; i++ ) {
-			for ( int i2 = 0; i2 < array[0].length; i2++ ) {
-				if ( array[i][i2] != null ) {
-					System.out.print( array[i][i2] );
-					for ( int i3 = array[i][i2].length(); i3 < colsize[i2]; i3++ ) {
-						System.out.print( " " );
+			if ( array[i][0] != null ) {
+				if ( i - 1 >= 0 ) {
+					if ( array[i][0].equals( array[i - 1][0] ) == false ) {
+						System.out.println( "----------------------------------------" );
+						System.out.println( array[i][0] );
+						System.out.println();
 					}
 				} else {
-					for ( int i3 = 0; i3 < colsize[i2]; i3++ ) {
-						System.out.print( " " );
-					}
+					System.out.println( array[i][0] );
+					System.out.println();
 				}
-				System.out.print( " | " );
+			}
+			if ( array[i][1] != null ) {
+				System.out.println( array[i][1] );
+			}
+			for ( int i2 = 2; i2 < array[0].length; i2++ ) {
+				if ( array[i][i2] != null ) {
+					System.out.println( " | " + array[i][i2] );
+				}
 			}
 			System.out.println();
 		}
-	}
-	
-	//получаем текст в кодировке windows-1251
-	public static String getStringUTF( String text ) {
-		try {
-			String newtext = new String( text.getBytes( "windows-1251" ), "utf-8" );
-			return newtext;
-		} catch ( IOException e ) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	//делаем отступы после номеров строки
-	public static String getOffset( int number, int maxnumber ) {
-		String num = Integer.toString( number );
-		String numlines = Integer.toString( maxnumber );
-		int numspace = numlines.length() - num.length();
-		String offset = "";
-		for ( int i = 0; i < numspace; i++ ) {
-			offset += " ";
-		}
-		return offset;
 	}
 	
 	//преобразуем ArrayList в String[][] массив
@@ -150,15 +123,25 @@ class urfutable {
 				time = delEmpty( time );
 				subjects = delEmpty( subjects );
 				dt = delEmpty( dt );
-				ArrayList<String> cabinet = getValue( dt, "\"_blank\">", "</a>" );
+				ArrayList<String> cabinet = getValue( dt, "<span class=\"cabinet\">", "</span>" );
 				ArrayList<String> teacher = getValue( dt, "<span class=\"teacher\">", "</span>" );
 				
-				String line = saveday + "|" + time.get( 0 ) + "|" + subjects.get( 0 );
+				String line = saveday + "|" + time.get( 0 ) + "|" + delNumSubject( subjects.get( 0 ));
 				
 				if (( cabinet != null ) & ( teacher != null )) {
 					cabinet = delEmpty( cabinet );
 					teacher = delEmpty( teacher );
-					line += "|" + cabinet.get( 0 );
+					
+					if ( thisIsALink( cabinet.get( 0 )) == true ) {
+						ArrayList<String> incabinet = getValue( dt, "target=\"_blank\">", "</a>" );
+						if ( incabinet != null ) {
+							incabinet = delEmpty( incabinet );
+							line += "|" + incabinet.get( 0 );
+						}
+					} else {
+						line += "|" + cabinet.get( 0 );
+					}
+					
 					for ( int i2 = 0; i2 < teacher.size(); i2++ ) {
 						line += "|" + teacher.get( i2 );
 					}
@@ -168,6 +151,35 @@ class urfutable {
 			}
 		}
 		return newtable;
+	}
+	
+	//убираем номер перед предметом
+	public static String delNumSubject( String line ) {
+		String newline = "";
+		int space = 2;
+		for ( int i = 0; i < line.length(); i++ ) {
+			if ( space == 0 ) {
+				newline += line.charAt( i );
+			}
+			if (( line.charAt( i ) == ' ' ) & ( space != 0 )) {
+				space -= 1;
+			}
+		}
+		return newline;
+	}
+	
+	//проверка ссылки
+	public static boolean thisIsALink( String line ) {
+		String link = "href";
+		for ( int i = 0; i < line.length(); i++ ) {
+			if ( i + link.length() <= line.length()) {
+				String teg = line.substring( i, i + link.length());
+				if ( teg.equals( link ) == true ) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	
 	//убираем пробелы
@@ -243,7 +255,7 @@ class urfutable {
 	public static ArrayList<String> getSheet( HttpURLConnection value ) {
 		ArrayList<String> sheet = new ArrayList<String>();
 		try {
-			BufferedReader sheetbuffer = new BufferedReader( new InputStreamReader( value.getInputStream()));
+			BufferedReader sheetbuffer = new BufferedReader( new InputStreamReader( value.getInputStream(), "utf-8" ));
 			String line = sheetbuffer.readLine();
 			while ( line != null ) {
 				sheet.add( line );
