@@ -76,7 +76,7 @@ class urfutable {
 		return table;
 	}
 	
-	//получение количества столбцов массива
+	//получаем количества столбцов массива
 	public static int getColNum( ArrayList<String> list ) {
 		int max = 0;
 		for ( int i = 0; i < list.size(); i++ ) {
