@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 class backpackproblem extends transposition {
 	public static void main( String[] args ) {
 		/*
@@ -20,21 +18,22 @@ class backpackproblem extends transposition {
 		int[] energyValue = { 3, 4, 3, 2 };
 		double[] weightUnit = { 4, 3, 2, 2 };
 		*/
-		char[] symbols = new char[energyValue.length];
-		for ( int i = 0; i < symbols.length; i++ ) {
-			symbols[i] = Integer.toString( i ).charAt( 0 );
-		}
 		
-		char[][] options = getOptionsNoRepeat( symbols );
+		Object[] symbols = new Object[energyValue.length];
+		for ( int i = 0; i < symbols.length; i++ ) {
+			symbols[i] = i;
+		}
+		Object[][] options = getOptionsNoRepeat( symbols );
+		
 		int maxEnergy = 0;
 		for ( int i = 0; i < options.length; i++ ) {
 			int energy = 0;
 			double weight = 0;
 			for ( int i2 = 0; i2 < options[0].length; i2++ ) {
-				double weightValue = weightUnit[Character.getNumericValue( options[i][i2] )];
+				double weightValue = weightUnit[(int)options[i][i2]];
 				if ( weight + weightValue <= maxWeight ) {
 					weight += weightValue;
-					energy += energyValue[Character.getNumericValue( options[i][i2] )];
+					energy += energyValue[(int)options[i][i2]];
 				}
 			}
 			if ( maxEnergy < energy ) {
