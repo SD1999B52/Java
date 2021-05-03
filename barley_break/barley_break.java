@@ -479,19 +479,4 @@ class barley_break {
 	public static int genNumber( int min, int max ) {
 		return (int)( Math.random() * ( max - min ) + min );
 	}
-	
-	//вывод массива
-	public static void arrayOut() {
-		for ( int i = 0; i < map.length; i++ ) {
-			for ( int i2 = 0; i2 < map[0].length; i2++ ) {
-				if ( map[i][i2] <= 9 ) {
-					System.out.print( "0" + map[i][i2] + " " );
-				} else {
-					System.out.print( map[i][i2] + " " );
-				}
-			}
-			System.out.println();
-		}
-		System.out.println();
-	}
 }
