@@ -1,5 +1,6 @@
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -8,10 +9,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Toolkit;
-import java.io.IOException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FileReader;
@@ -26,15 +28,15 @@ class sudoku {
 	static int level = 65;
 	static JPanel panel;
 	
-	static int timer = 0;
-	static char mode = 'd';
+	static char showMode = 'd';
+	static Timer messageTimer;
 	
 	public static void main( String[] args ) {
 		JFrame app = new JFrame();
 		app.setTitle( "Sudoku" );
 		app.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		app.setSize( 800, 600 );
-		app.setMinimumSize( new Dimension( 240, 320 ));
+		app.setMinimumSize( new Dimension( 240, 240 ));
 		
 		formCenter( app );
 		
@@ -42,6 +44,9 @@ class sudoku {
 		
 		if ( saveExists() == true ) {
 			loadGame();
+			if ( gameWin() == true ) {
+				showMode = 'w';
+			}
 		} else {
 			newGame();
 		}
@@ -61,6 +66,25 @@ class sudoku {
 						if ( viewArray[i2][i] == 0 ) {
 							g.setColor( new Color( 223, 255, 214 ));
 							g.fillRect( offsetX, offsetY, getCellSize(), getCellSize());
+						}
+						
+						//подсветка строки и столбца
+						if (( selectY == i2 ) | ( selectX == i )) {
+							g.setColor( new Color( 0, 255, 0 ));
+							g.fillRect( offsetX, offsetY, getCellSize(), getCellSize());
+						}
+						
+						//подсветка выбранного значения
+						g.setColor( new Color( 255, 0, 0 ));
+						if ( viewArray[selectY][selectX] != 0 ) {
+							if (( viewArray[selectY][selectX] == viewArray[i2][i] ) | ( viewArray[selectY][selectX] == playerArray[i2][i] )) {
+								g.fillRect( offsetX, offsetY, getCellSize(), getCellSize());
+							}
+						}
+						if ( playerArray[selectY][selectX] != 0 ) {
+							if (( playerArray[selectY][selectX] == playerArray[i2][i] ) | ( playerArray[selectY][selectX] == viewArray[i2][i] )) {
+								g.fillRect( offsetX, offsetY, getCellSize(), getCellSize());
+							}
 						}
 						
 						g.setColor( new Color( 0, 0, 0 ));
@@ -92,31 +116,38 @@ class sudoku {
 					g.drawRect( offsetXSave - 2, offsetYSave - 2, getCellSize() + 4, getCellSize() + 4 );
 				}
 				
-				if (( gameWin() == true ) | ( mode != 'd' )) {
-					String text = "You Win";
-					if ( mode == 's' ) {
+				if ( showMode != 'd' ) {
+					String text = "";
+					
+					if ( showMode == 's' ) {
 						text = "Save";
 					}
-					if ( mode == 'l' ) {
+					if ( showMode == 'l' ) {
 						text = "Load";
 					}
+					if ( showMode == 'w' ) {
+						text = "You Win";
+					}
+					
 					g.setFont( new Font( "monospace", Font.BOLD, getCellSize() * 2 ));
 					int textWidth = g.getFontMetrics().stringWidth( text );
 					int textHeigth = g.getFontMetrics().getHeight();
-					int centerWidthAllcell = ( 5 + 9 * getCellSize() + 9 / 3 * 5 ) / 2 - textWidth / 2;
-					int centerHeightAllcell = ( 5 + 9 * getCellSize() + 9 / 3 * 5 ) / 2 + textHeigth / 3;
 					
-					int x1 = centerWidthAllcell;
-					int y1 = centerHeightAllcell - textHeigth + textHeigth / 6; //-?
-					int x2 = textWidth;
-					int y2 = textHeigth;
+					int x1Board = 9 * getCellSize() / 2 - textWidth / 2 + 5;
+					int y1Board = 9 * getCellSize() / 2 - textHeigth / 2 + 5;
+					int x2Board = textWidth;
+					int y2Board = textHeigth;
+					
 					g.setColor( new Color( 255, 255, 255 ));
-					g.fillRect( x1, y1, x2, y2 );
+					g.fillRect( x1Board, y1Board, x2Board, y2Board );
 					
 					g.setColor( new Color( 0, 0, 0 ));
-					g.drawRect( x1, y1, x2, y2 );
-					g.drawRect( x1 - 1, y1 - 1, x2 + 2, y2 + 2 );
-					g.drawString( text, centerWidthAllcell, centerHeightAllcell );
+					g.drawRect( x1Board, y1Board, x2Board, y2Board );
+					g.drawRect( x1Board - 1, y1Board - 1, x2Board + 2, y2Board + 2 );
+					
+					int xText = 9 * getCellSize() / 2 - textWidth / 2 + 5;
+					int yText = 9 * getCellSize() / 2 + textHeigth / 3 + 5;
+					g.drawString( text, xText, yText );
 				}
 			}
 		};
@@ -125,82 +156,71 @@ class sudoku {
 			public void mouseMoved( MouseEvent e ) {
 				selectX = getMouseXCell( e.getX());
 				selectY = getMouseYCell( e.getY());
+				panel.repaint();
 			}
 			public void mouseDragged( MouseEvent e ) {
 				selectX = getMouseXCell( e.getX());
 				selectY = getMouseYCell( e.getY());
+				panel.repaint();
 			}
 		});
 		
 		panel.addKeyListener( new KeyAdapter() {
-			boolean keyPress = false, keyPress2 = false, keyPress3 = false;
-			
 			public void keyPressed( KeyEvent e ) {
-				if (( viewArray[selectY][selectX] == 0 ) & ( gameWin() == false ) & ( mode == 'd' )) {
+				if (( viewArray[selectY][selectX] == 0 ) & ( showMode == 'd' )) {
 					for ( int i = 49; i <= 57; i++ ) {
 						if ( e.getKeyCode() == i ) {
 							playerArray[selectY][selectX] = Character.getNumericValue( i );
 						}
-						if ( e.getKeyCode() == 8 ) {
-							playerArray[selectY][selectX] = 0;
-						}
+					}
+					if ( e.getKeyCode() == 8 ) {
+						playerArray[selectY][selectX] = 0;
+					}
+					if ( gameWin() == true ) {
+						showMode = 'w';
 					}
 				}
-				if (( e.getKeyCode() == 48 ) & ( keyPress == false )) {
+				if ( e.getKeyCode() == 48 ) {
 					newGame();
-					keyPress = true;
+					
+					showMode = 'd';
 				}
-				if (( e.getKeyCode() == 39 ) & ( keyPress2 == false )) {
+				if ( e.getKeyCode() == 39 ) {
 					if ( selectX < 8 ) {
 						selectX += 1;
-						keyPress2 = true;
 					}
 				}
-				if (( e.getKeyCode() == 37 ) & ( keyPress2 == false )) {
+				if ( e.getKeyCode() == 37 ) {
 					if ( selectX > 0 ) {
 						selectX -= 1;
-						keyPress2 = true;
 					}
 				}
-				if (( e.getKeyCode() == 38 ) & ( keyPress2 == false )) {
+				if ( e.getKeyCode() == 38 ) {
 					if ( selectY > 0 ) {
 						selectY -= 1;
-						keyPress2 = true;
 					}
 				}
-				if (( e.getKeyCode() == 40 ) & ( keyPress2 == false )) {
+				if ( e.getKeyCode() == 40 ) {
 					if ( selectY < 8 ) {
 						selectY += 1;
-						keyPress2 = true;
 					}
 				}
-				if (( e.getKeyCode() == 61 ) & ( keyPress3 == false )) {
-					timer = 50;
-					mode = 's';
+				if ( e.getKeyCode() == 61 ) {
 					saveGame();
-					keyPress3 = true;
+					
+					showMode = 's';
+					messageTimer.restart();
 				}
-				if (( e.getKeyCode() == 45 ) & ( keyPress3 == false )) {
+				if ( e.getKeyCode() == 45 ) {
 					if ( saveExists() == true ) {
-						timer = 50;
-						mode = 'l';
 						loadGame();
-						keyPress3 = true;
+						
+						showMode = 'l';
+						messageTimer.restart();
 					}
 				}
-			}
-			public void keyReleased( KeyEvent e ) {
-				if ( e.getKeyCode() == 48 ) {
-					keyPress = false;
-				}
-				for ( int i = 37; i <= 40; i++ ) {
-					if ( e.getKeyCode() == i ) {
-						keyPress2 = false;
-					}
-				}
-				if (( e.getKeyCode() == 61 ) | ( e.getKeyCode() == 45 )) {
-					keyPress3 = false;
-				}
+				
+				panel.repaint();
 			}
 		});
 		
@@ -210,23 +230,23 @@ class sudoku {
 		app.add( panel, BorderLayout.CENTER );
 		app.setVisible( true );
 		
-		while ( 1 < 2 ) {
-			panel.repaint();
-			
-			if ( timer != 0 ) {
-				timer -= 1;
-			} else {
-				mode = 'd';
+		ActionListener listener = new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				if ( gameWin() == true ) {
+					showMode = 'w';
+				} else {
+					showMode = 'd';
+				}
+				panel.repaint();
 			}
-			
-			try {
-				Thread.sleep( 30 );
-			} catch ( Exception e ) {
-				e.printStackTrace();
-			}
-		}
+		};
+		
+		//инициализация таймера без повторов для показа сообщений
+		messageTimer = new Timer( 2000, listener );
+		messageTimer.setRepeats( false );
 	}
 	
+	//метод перемещения формы в центр экрана
 	public static void formCenter( JFrame form ) {
 		int formWidth = (int)form.getBounds().getSize().getWidth();
 		int formHeight = (int)form.getBounds().getSize().getHeight();
@@ -237,6 +257,7 @@ class sudoku {
 		form.setBounds( newFormX, newFormY, formWidth, formHeight );
 	}
 	
+	//метод загрузки сохраненной игры и создание ключа
 	public static void loadGame() {
 		try {
 			BufferedReader readFile1 = new BufferedReader( new FileReader( "viewArray.txt" ));
@@ -254,11 +275,12 @@ class sudoku {
 			
 			arrayDataCopy( array, viewArray );
 			solve( array );
-		} catch ( IOException e ) {
+		} catch ( Exception e ) {
 			e.printStackTrace();
 		}
 	}
 	
+	//метод проверки существования сохраненной игры
 	public static boolean saveExists() {
 		File file1 = new File( "viewArray.txt" );
 		File file2 = new File( "playerArray.txt" );
@@ -268,6 +290,7 @@ class sudoku {
 		return false;
 	}
 	
+	//метод сохранения игры
 	public static void saveGame() {
 		try {
 			BufferedWriter writeFile1 = new BufferedWriter( new FileWriter( "viewArray.txt" ));
@@ -282,14 +305,15 @@ class sudoku {
 			}
 			writeFile1.close();
 			writeFile2.close();
-		} catch ( IOException e ) {
+		} catch ( Exception e ) {
 			e.printStackTrace();
 		}
 	}
 	
+	//метод создания файла readMe.txt или чтение Difficulty - количества шагов при удалении значений из ключа
 	public static void getLevelOrCreateReadMe() {
 		try {
-			File file = new File( "ReadMe.txt" );
+			File file = new File( "readMe.txt" );
 			if ( file.exists() == true ) {
 				BufferedReader readFile = new BufferedReader( new FileReader( file ));
 				String line = "";
@@ -297,43 +321,27 @@ class sudoku {
 					line = readFile.readLine();
 				}
 				
-				boolean delimiter = false;
-				String textNum = "";
-				for ( int i = 0; i < line.length(); i++ ) {
-					char symbol = line.charAt( i );
-					if ( delimiter == true ) {
-						for ( int i2 = 48; i2 <= 57; i2++ ) {
-							if ( symbol == (char)i2 ) {
-								textNum += symbol;
-							}
-						}
-					}
-					if ( symbol == ':' ) {
-						delimiter = true;
-					}
-				}
+				String[] data = line.split( ":" );
+				data[1] = data[1].replaceAll( " ", "" );
+				
 				readFile.close();
-				level = Integer.parseInt( textNum );
+				level = Integer.parseInt( data[1] );
 			} else {
 				BufferedWriter writeFile = new BufferedWriter( new FileWriter( file ));
-				writeFile.write( "Value key: 1,2,3,4,5,6,7,8,9" );
-				writeFile.newLine();
-				writeFile.write( "New game key: 0" );
-				writeFile.newLine();
-				writeFile.write( "Select: mouse, key: up, down, left, right" );
-				writeFile.newLine();
-				writeFile.write( "Save game key: =" );
-				writeFile.newLine();
-				writeFile.write( "Load game key: -" );
-				writeFile.newLine();
-				writeFile.write( "Difficulty ( 0 - 65 ): 65" );
+				writeFile.write( "Value key: 1,2,3,4,5,6,7,8,9" + "\r\n" );
+				writeFile.write( "New game key: 0" + "\r\n" );
+				writeFile.write( "Select: mouse, key: up, down, left, right" + "\r\n" );
+				writeFile.write( "Save game key: =" + "\r\n" );
+				writeFile.write( "Load game key: -" + "\r\n" );
+				writeFile.write( "Difficulty ( 0 - 65 ): 65" + "\r\n" );
 				writeFile.close();
 			}
-		} catch ( IOException e ) {
+		} catch ( Exception e ) {
 			e.printStackTrace();
 		}
 	}
 	
+	//метод начала новой игры
 	public static void newGame() {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -347,6 +355,7 @@ class sudoku {
 		delValue();
 	}
 	
+	//метод объединения судоку с ответами игрока и проверка совпадения с ключом
 	public static boolean gameWin() {
 		int[][] newarray = new int[9][9];
 		for ( int i = 0; i < 9; i++ ) {
@@ -360,6 +369,7 @@ class sudoku {
 		return compareOfArrays( array, newarray );
 	}
 	
+	//получить ячейку под курсором(столбец)
 	public static int getMouseXCell( int mouseX ) {
 		int mouseXOffset = ( mouseX - 5 ) / getCellSize() / 3 * 5;
 		int mouseXCell = ( mouseX - 5 - mouseXOffset ) / getCellSize();
@@ -372,6 +382,7 @@ class sudoku {
 		return mouseXCell;
 	}
 	
+	//получить ячейку под курсором(строка)
 	public static int getMouseYCell( int mouseY ) {
 		int mouseYOffset = ( mouseY - 5 ) / getCellSize() / 3 * 5;
 		int mouseYCell = ( mouseY - 5 - mouseYOffset ) / getCellSize();
@@ -384,25 +395,30 @@ class sudoku {
 		return mouseYCell;
 	}
 	
+	//получить размер ячейки
 	public static int getCellSize() {
 		int wrectOffset = getPanelWidth() - 5 * 4;
 		int hrectOffset = getPanelHeight() - 5 * 4;
 		if (( wrectOffset / 9 ) > ( hrectOffset / 9 )) {
 			return hrectOffset / 9;
-		} else {
-			return wrectOffset / 9;
 		}
+		return wrectOffset / 9;
 	}
 	
+	//получить высоту панели
 	public static int getPanelHeight() {
 		return panel.getSize().height;
 	}
 	
+	//получить ширину панели
 	public static int getPanelWidth() {
 		return panel.getSize().width;
 	}
 	
-	//далее методы создания матрицы sudoku
+	/*------------------------------------
+	далее методы создания матрицы судоку
+	------------------------------------*/
+	//метод удаления значений и проверка на одно решение
 	public static void delValue() {
 		int[][] notEmpty = new int[2][81];
 		int[][] ban = new int[9][9];
@@ -422,21 +438,22 @@ class sudoku {
 			}
 			
 			int indexSelected = (int)( Math.random() * index );
-			int cellY = notEmpty[0][indexSelected] / 3;
-			int cellX = notEmpty[1][indexSelected] / 3;
+			int cellY = notEmpty[0][indexSelected];
+			int cellX = notEmpty[1][indexSelected];
 			
 			int[][] saveArray = new int[9][9];
 			arrayDataCopy( saveArray, viewArray );
 			
-			viewArray[notEmpty[0][indexSelected]][notEmpty[1][indexSelected]] = 0;
+			viewArray[cellY][cellX] = 0;
 			
 			if ( oneSolution() == false ) {
 				arrayDataCopy( viewArray, saveArray );
-				ban[notEmpty[0][indexSelected]][notEmpty[1][indexSelected]] = 1;
+				ban[cellY][cellX] = 1;
 			}
 		}
 	}
 	
+	//метод перемешки значений в таблице
 	public static void generateTable() {
 		for ( int i = 0; i < 10; i++ ) {
 			int operation = (int)( Math.random() * 5 );
@@ -458,12 +475,14 @@ class sudoku {
 		}
 	}
 	
+	//обмен двух районов по вертикали
 	public static void swapColumsArea() {
 		transpose();
 		swapRowsArea();
 		transpose();
 	}
 	
+	//обмен двух районов по горизонтали
 	public static void swapRowsArea() {
 		int cellYA = (int)( Math.random() * 3 );
 		
@@ -490,12 +509,14 @@ class sudoku {
 		arrayDataCopy( array, newarray );
 	}
 	
+	//обмен двух столбцов в пределах одного района
 	public static void swapColumsSmall() {
 		transpose();
 		swapRowsSmall();
 		transpose();
 	}
 	
+	//обмен двух строк в пределах одного района
 	public static void swapRowsSmall() {
 		int cellY = (int)( Math.random() * 3 );
 		int rowA = (int)( Math.random() * 3 );
@@ -521,6 +542,7 @@ class sudoku {
 		arrayDataCopy( array, newarray );
 	}
 	
+	//транспонированние матрицы (замена строк столбцами)
 	public static void transpose() {
 		int[][] newarray = new int[9][9];
 		for ( int i = 0; i < 9; i++ ) {
@@ -531,6 +553,7 @@ class sudoku {
 		arrayDataCopy( array, newarray );
 	}
 	
+	//заполнения начальной матрицы со смещение
 	public static void fillInTable() {
 		for ( int i = 0; i < 9; i++ ) {
 			int ycell = i / 3;
@@ -541,7 +564,10 @@ class sudoku {
 		}
 	}
 	
-	//далее методы решения судоку для получения количества решений
+	/*------------------------------------------------------------
+	далее методы решения судоку для получения количества решений
+	------------------------------------------------------------*/
+	//метод проверки существования только одного варианта решения
 	public static boolean oneSolution() {
 		int[][] arraySolA = new int[9][9];
 		int[][] arraySolB = new int[9][9];
@@ -552,6 +578,7 @@ class sudoku {
 		return compareOfArrays( arraySolA, arraySolB );
 	}
 	
+	//метод перебора значений с 9 до 1 с откатом при неверном подобранном значении
 	public static boolean solveB( int[][] sudokuArray ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -572,6 +599,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод проверки равенства двух массивов
 	public static boolean compareOfArrays( int[][] array1, int[][] array2 ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -583,6 +611,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод копирования значений одного массива в другой
 	public static void arrayDataCopy( int[][] array1, int[][] array2 ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -591,7 +620,10 @@ class sudoku {
 		}
 	}
 	
-	//далее методы решения судоку
+	/*------------------------------------------------------
+	далее методы решения судоку методом поиска с возвратом
+	------------------------------------------------------*/
+	//метод перебора значений с 1 до 9 с откатом при неверно подобранном значении
 	public static boolean solve( int[][] sudokuArray ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -612,6 +644,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод проверки правильности судоку
 	public static boolean isValid( int[][] sudokuArray, int y, int x ) {
 		if ( rowConstraint( sudokuArray, y ) == false ) {
 			return false;
@@ -625,6 +658,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод проверки что в каждом столбце каждое число встречается по разу
 	public static boolean columnConstraint( int[][] sudokuArray, int x ) {
 		int[] constraint = new int[9];
 		for ( int i = 0; i < 9; i++ ) {
@@ -640,6 +674,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод проверки что в каждой строке каждое число встречается по разу
 	public static boolean rowConstraint( int[][] sudokuArray, int y ) {
 		int[] constraint = new int[9];
 		for ( int i = 0; i < 9; i++ ) {
@@ -655,6 +690,7 @@ class sudoku {
 		return true;
 	}
 	
+	//метод проверки что в каждом квадранте каждое число встречается по разу
 	public static boolean subsectionConstraint( int[][] sudokuArray, int y, int x ) {
 		int[] constraint = new int[9];
 		int rowStart = ( y / 3 ) * 3;
