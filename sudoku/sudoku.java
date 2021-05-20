@@ -320,11 +320,10 @@ class sudoku {
 				for ( int i = 0; i < 6; i++ ) {
 					line = readFile.readLine();
 				}
+				readFile.close();
 				
 				String[] data = line.split( ":" );
 				data[1] = data[1].replaceAll( " ", "" );
-				
-				readFile.close();
 				level = Integer.parseInt( data[1] );
 			} else {
 				BufferedWriter writeFile = new BufferedWriter( new FileWriter( file ));
@@ -418,7 +417,7 @@ class sudoku {
 	/*------------------------------------
 	далее методы создания матрицы судоку
 	------------------------------------*/
-	//метод удаления значений и проверка на одно решение
+	//метод удаления значений (создание судоку)
 	public static void delValue() {
 		int[][] notEmpty = new int[2][81];
 		int[][] ban = new int[9][9];
@@ -453,7 +452,7 @@ class sudoku {
 		}
 	}
 	
-	//метод перемешки значений в таблице
+	//метод перемешивания значений в таблице
 	public static void generateTable() {
 		for ( int i = 0; i < 10; i++ ) {
 			int operation = (int)( Math.random() * 5 );
@@ -553,7 +552,7 @@ class sudoku {
 		arrayDataCopy( array, newarray );
 	}
 	
-	//заполнения начальной матрицы со смещение
+	//заполнения начальной матрицы со смещением
 	public static void fillInTable() {
 		for ( int i = 0; i < 9; i++ ) {
 			int ycell = i / 3;
@@ -578,7 +577,7 @@ class sudoku {
 		return compareOfArrays( arraySolA, arraySolB );
 	}
 	
-	//метод перебора значений с 9 до 1 с откатом при неверном подобранном значении
+	//метод перебора значений с 9 до 1 с возвратом при неверно подобранном значении
 	public static boolean solveB( int[][] sudokuArray ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -623,7 +622,7 @@ class sudoku {
 	/*------------------------------------------------------
 	далее методы решения судоку методом поиска с возвратом
 	------------------------------------------------------*/
-	//метод перебора значений с 1 до 9 с откатом при неверно подобранном значении
+	//метод перебора значений с 1 до 9 с возвратом при неверно подобранном значении
 	public static boolean solve( int[][] sudokuArray ) {
 		for ( int i = 0; i < 9; i++ ) {
 			for ( int i2 = 0; i2 < 9; i2++ ) {
@@ -644,7 +643,7 @@ class sudoku {
 		return true;
 	}
 	
-	//метод проверки правильности судоку
+	//метод проверки возможности нахождения здесь подставленного значения
 	public static boolean isValid( int[][] sudokuArray, int y, int x ) {
 		if ( rowConstraint( sudokuArray, y ) == false ) {
 			return false;
@@ -690,7 +689,7 @@ class sudoku {
 		return true;
 	}
 	
-	//метод проверки что в каждом квадранте каждое число встречается по разу
+	//метод проверки что в каждом квадрате каждое число встречается по разу
 	public static boolean subsectionConstraint( int[][] sudokuArray, int y, int x ) {
 		int[] constraint = new int[9];
 		int rowStart = ( y / 3 ) * 3;
